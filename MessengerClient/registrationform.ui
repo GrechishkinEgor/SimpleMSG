@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>RegistrationForm</class>
+ <widget class="QDialog" name="RegistrationForm">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Регистрация</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_3">
+   <item>
+    <widget class="QLabel" name="infoLabel">
+     <property name="font">
+      <font>
+       <pointsize>20</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>Регистрация</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="QLabel" name="loginLabel">
+         <property name="text">
+          <string>Логин: </string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="passwordLabel">
+         <property name="text">
+          <string>Пароль:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="repeatPasswordLabel">
+         <property name="text">
+          <string>Подтвердите пароль: </string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="surnameLabel">
+         <property name="text">
+          <string>Фамилия: </string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="nameLabel">
+         <property name="text">
+          <string>Имя:</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QLineEdit" name="loginLine"/>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="passwordLine"/>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="repeatPasswordLine"/>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="surnameLine"/>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="nameLine"/>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QPushButton" name="registerButton">
+     <property name="text">
+      <string>Зарегистрироваться</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
