@@ -25,6 +25,44 @@ Log::~Log()
     }
 }
 
+bool Log::WriteInFile(bool flag)
+{
+    if (flag)
+    {
+        if (!logFile)
+        {
+            logFile = new QFile(logFileName);
+            logFile->open(QIODevice::Append);
+            logStream = new QTextStream(logFile);
+        }
+
+
+        if (logFile->isOpen())
+        {
+            writingInFile = true;
+            return true;
+        }
+        else
+        {
+            writingInFile = false;
+            this->Write("Can't open log file '" + logFileName + "'");
+            return false;
+        }
+    }
+    else
+    {
+        writingInFile = false;
+        return true;
+    }
+
+}
+
+bool Log::WriteInConsole(bool flag)
+{
+    writingInConsole = flag;
+    return true;
+}
+
 void Log::Write(QString msg)
 {
     if (writingInFile)
@@ -34,44 +72,4 @@ void Log::Write(QString msg)
     }
     if (writingInConsole)
         qDebug() << msg;
-}
-
-bool Log::EnableWritingInConsole()
-{
-    writingInConsole = true;
-    return true;
-}
-
-bool Log::EnableWritingInFile()
-{
-    if (!logFile)
-    {
-        logFile = new QFile(logFileName);
-        logStream = new QTextStream(logFile);
-    }
-
-    if (logFile->open(QIODevice::Append))
-    {
-        writingInFile = true;
-        return true;
-    }
-    else
-    {
-        if (writingInConsole)
-            qDebug() << "Can't open log file '" + logFileName + "'";
-        writingInFile = false;
-        return false;
-    }
-}
-
-bool Log::DisableWritingInConsole()
-{
-    writingInConsole = false;
-    return true;
-}
-
-bool Log::DisableWritingInFile()
-{
-    writingInFile = false;
-    return true;
 }

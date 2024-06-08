@@ -15,6 +15,12 @@ public:
     explicit RegistrationForm(QWidget *parent = nullptr);
     ~RegistrationForm();
 
+    void ClearFields();
+    void EnableRegisterButton();
+
+private slots:
+    void on_registerButton_clicked();
+
 private:
     Ui::RegistrationForm *ui;
 };

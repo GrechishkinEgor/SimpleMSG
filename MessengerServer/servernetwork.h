@@ -28,31 +28,36 @@ private:
     //Классы конкретных обработчиков
     class ServerCommand_AUTHENTICATE : public INetworkEventHandler{
     public:
-        ServerCommand_AUTHENTICATE() { }
         void Handle(quint32 requestId, UserConnection* user, QDataStream& params) override;
     };
 
     class ServerCommand_CHAT_LIST : public INetworkEventHandler{
     public:
-        ServerCommand_CHAT_LIST() { }
         void Handle(quint32 requestId, UserConnection* user, QDataStream& params) override;
     };
 
     class ServerCommand_CHAT_MESSAGES : public INetworkEventHandler{
     public:
-        ServerCommand_CHAT_MESSAGES() { }
         void Handle(quint32 requestId, UserConnection* user, QDataStream& params) override;
     };
 
     class ServerCommand_SEND_MESSAGE : public INetworkEventHandler{
     public:
-        ServerCommand_SEND_MESSAGE() {  }
+        void Handle(quint32 requestId, UserConnection* user, QDataStream& params) override;
+    };
+
+    class ServerCommand_REGISTER : public INetworkEventHandler{
+    public:
+        void Handle(quint32 requestId, UserConnection* user, QDataStream& params) override;
+    };
+
+    class ServerCommand_CHAT_CREATE : public INetworkEventHandler{
+    public:
         void Handle(quint32 requestId, UserConnection* user, QDataStream& params) override;
     };
 
     class ServerCommand_UnrecognizedCommand : public INetworkEventHandler{
     public:
-        ServerCommand_UnrecognizedCommand() { }
         void Handle(quint32 requestId, UserConnection* user, QDataStream& params) override;
     };
 
@@ -64,6 +69,7 @@ private:
     void SerializeSql(UserConnection* user, QSqlQuery* query);      //Записывает в поток результаты запроса
 
     void SendRequest_CHAT_UPDATE_MESSAGES(QSqlQuery* messagesInfo); //Отправить одно сообщение всем участникам чата, которые онлайн
+    void SendRequest_CHAT_UPDATE_LIST(qint32 idChat, qint32 idChatType, QString chatName, QVector<qint32> members);
 
 public:
     void RunServer(int tcpPort);

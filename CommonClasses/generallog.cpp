@@ -5,7 +5,7 @@ GeneralLog* GeneralLog::instance = nullptr;
 
 GeneralLog::GeneralLog() : Log("GeneralLog.txt")
 {
-    this->EnableWritingInFile();
+    this->WriteInFile(true);
 }
 
 GeneralLog *GeneralLog::GetLog()

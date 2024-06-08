@@ -5,18 +5,19 @@
 #include <QByteArray>
 #include <QMap>
 #include <QTimer>
+#include "qapplication.h"
 
 #include "identificationform.h"
 #include "messengermainform.h"
 #include "helloform.h"
-#include "qapplication.h"
 #include "registrationform.h"
-#include "searchuserform.h"
+#include "startpersonalchatform.h"
 
 
 #include "inetworkeventhandler.h"
 #include "networkeventmainhandler.h"
 #include "chat.h"
+
 
 class ApplicationContext : public QObject
 {
@@ -62,6 +63,24 @@ private:
         void Handle(quint32 requestId, UserConnection* user, QDataStream& params) override;
     };
 
+    class Server_Answer_REGISTER : public INetworkEventHandler{
+    public:
+        void Handle(quint32 requestId, UserConnection* user, QDataStream& params) override;
+    };
+
+    class Server_Answer_CHAT_CREATE : public INetworkEventHandler{
+    private:
+        bool isPersonalChat;
+    public:
+        void Handle(quint32 requestId, UserConnection* user, QDataStream& params) override;
+        void SetPersonalChatFlag(bool flag);
+    };
+
+    class Server_Answer_CHAT_UPDATE_LIST : public INetworkEventHandler{
+    public:
+        void Handle(quint32 requestId, UserConnection* user, QDataStream& params) override;
+    };
+
     class Server_Answer_Unrecognized_Command: public INetworkEventHandler{
     public:
         void Handle(quint32 requestId, UserConnection* user, QDataStream& params) override;
@@ -80,7 +99,7 @@ private:
     IdentificationForm* identificationWindow;
     MessengerMainForm* messengerMainWindow;
     RegistrationForm* registrationWindow;
-    SearchUserForm* searchUserWindow;
+    StartPersonalChatForm* startPersonalChatWindow;
 
     //Работа с сетью
     NetworkEventMainHandler mainHandler;        //Главный обработчик сетевых событий, принимающий сообщения
@@ -97,8 +116,9 @@ public:
     void ShowHelloForm();
     void ShowIdentificationForm();
     void ShowRegistrationForm();
-    void ShowSearchUserForm();
     void ShowMessengerMainForm();               //Также скрывает приветственное окно и окно идентификации
+    void ShowStartPersonalChatWindow();
+    void HideCreatingChatWindows();             //Скрывает окна, отвечающие за создание чатов
 
     QMap<qint32, Chat*>& GetChats();
     QMap<qint32, User*>& GetUsers();
@@ -109,6 +129,8 @@ public:
     void SendRequest_CHAT_LIST();
     void SendRequest_CHAT_MESSAGES(Chat* selectedChat);
     void SendRequest_SEND_MESSAGE(Message* newMessage);
+    void SendRequest_REGISTER(User* newUser, QString password);
+    void SendRequest_CHAT_CREATE(QString login);    //Для личных сообщений
 
 public slots:
     void ConnectToServerTimeout();

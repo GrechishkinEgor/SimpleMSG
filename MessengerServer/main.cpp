@@ -8,16 +8,17 @@
 #include "servernetwork.h"
 #include "generallog.h"
 #include "messengerdatabase.h"
-
-#define SERVER_VERSION "0.1"
+#include "applicationinfo.h"
 
 int main(int argc, char *argv[])
 {
-    GeneralLog::GetLog()->Write("\n------------\n");
+    QCoreApplication app(argc, argv);   //Цикл обработки сообщений
 
-    QCoreApplication app(argc, argv);
-    GeneralLog::GetLog()->Write(QString("Start server version ") + SERVER_VERSION +
-                "\nStart time: " + QDateTime::currentDateTime().toString("dd.MM.yyyy HH:mm:ss"));
+    GeneralLog::GetLog()->Write("\n------------\n");
+    GeneralLog::GetLog()->Write("Starting the server");
+    GeneralLog::GetLog()->Write(QString("Server version: ") + SERVER_VERSION);
+    GeneralLog::GetLog()->Write(QString("MSG protocol version: ") + MSG_PROTOCOL_VERSION);
+    GeneralLog::GetLog()->Write(QString("Start time: ") + QDateTime::currentDateTime().toString("dd.MM.yyyy HH:mm:ss"));
 
     GeneralLog::GetLog()->Write("Initialize messenger database");
     QSqlDatabase& dbase = MessengerDatabase::GetDB();
@@ -28,11 +29,11 @@ int main(int argc, char *argv[])
     int resultCode = 0;
     if (dbase.isOpen() && ServerNetwork::GetServerNetwork()->isListening())
     {
-        GeneralLog::GetLog()->Write("Run message processing");
+        GeneralLog::GetLog()->Write(QDateTime::currentDateTime().toString("dd.MM.yyyy HH:mm:ss") + ": Run message processing");
         resultCode = app.exec();
     }
 
-    GeneralLog::GetLog()->Write("Stop server");
+    GeneralLog::GetLog()->Write("Stopping server");
     if (ServerNetwork::GetServerNetwork()->isListening())
     {
         GeneralLog::GetLog()->Write("Stopping network");
@@ -44,6 +45,6 @@ int main(int argc, char *argv[])
         dbase.close();
     }
 
-    GeneralLog::GetLog()->Write("Stop time: " + QDateTime::currentDateTime().toString("dd.MM.yyyy HH:mm:ss"));
+    GeneralLog::GetLog()->Write("Stopping time: " + QDateTime::currentDateTime().toString("dd.MM.yyyy HH:mm:ss"));
     return resultCode;
 }

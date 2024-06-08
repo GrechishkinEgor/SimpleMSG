@@ -76,10 +76,18 @@
         <widget class="QLineEdit" name="loginLine"/>
        </item>
        <item>
-        <widget class="QLineEdit" name="passwordLine"/>
+        <widget class="QLineEdit" name="passwordLine">
+         <property name="echoMode">
+          <enum>QLineEdit::Password</enum>
+         </property>
+        </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="repeatPasswordLine"/>
+        <widget class="QLineEdit" name="repeatPasswordLine">
+         <property name="echoMode">
+          <enum>QLineEdit::Password</enum>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QLineEdit" name="surnameLine"/>

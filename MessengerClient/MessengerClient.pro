@@ -25,9 +25,10 @@ SOURCES += \
     main.cpp \
     messengermainform.cpp \
     registrationform.cpp \
-    searchuserform.cpp
+    startpersonalchatform.cpp
 
 HEADERS += \
+    ../CommonClasses/applicationinfo.h \
     ../CommonClasses/chat.h \
     ../CommonClasses/generallog.h \
     ../CommonClasses/inetworkeventhandler.h \
@@ -43,14 +44,14 @@ HEADERS += \
     message.h \
     messengermainform.h \
     registrationform.h \
-    searchuserform.h
+    startpersonalchatform.h
 
 FORMS += \
     helloform.ui \
     identificationform.ui \
     messengermainform.ui \
     registrationform.ui \
-    searchuserform.ui
+    startpersonalchatform.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

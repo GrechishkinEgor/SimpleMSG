@@ -18,11 +18,18 @@ public:
     Log(QString logFileName);
     ~Log();
 
-    bool EnableWritingInFile();
-    bool EnableWritingInConsole();
-    bool DisableWritingInFile();
-    bool DisableWritingInConsole();
+    /*Устанавливает, необходимо ли выводить логи в файл. По умолчанию вывод в файл выключен
+     *flag = true, если да; flag = false, если нет
+     *Возвращает истину, если переключение прошло успешно, или ложь, если переключение невозможно
+    */
+    bool WriteInFile(bool flag);
+    /*Устанавливает, необходимо ли выводить логи в консоль. По умолчанию вывод в консоль включен
+     *flag = true, если да; flag = false, если нет
+     *Возвращает истину, если переключение прошло успешно, или ложь, если переключение невозможно
+    */
+    bool WriteInConsole(bool flag);
 
+    /*Записывает строку логов*/
     void Write(QString msg);
 };
 

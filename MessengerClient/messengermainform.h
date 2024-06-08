@@ -23,6 +23,8 @@ public:
     void ViewChatList();
     void ViewChatMessages(Chat* currentChat);
     void ViewMessage(Message* currentMessage);
+    void ViewChat(Chat* currentChat);
+    void FocusOnChat(Chat* currentChat);
 
 private slots:
     void on_action_triggered();

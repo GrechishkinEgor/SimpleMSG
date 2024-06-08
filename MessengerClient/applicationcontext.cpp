@@ -1,6 +1,8 @@
+#include <QMessageBox>
+#include <QDateTime>
+
 #include "applicationcontext.h"
 #include "generallog.h"
-#include <QMessageBox>
 #include "chat.h"
 #include "requestid.h"
 
@@ -12,17 +14,17 @@ ApplicationContext::ApplicationContext()
     identificationWindow = nullptr;
     messengerMainWindow = nullptr;
     registrationWindow = nullptr;
-    searchUserWindow = nullptr;
+    startPersonalChatWindow = nullptr;
     selectedChat = nullptr;
 
     //Подключаемся к серверу
     GeneralLog::GetLog()->Write("Trying to connect to server");
     connect(&currentUser, &QTcpSocket::connected, this, &ApplicationContext::ConnectToServerSuccess);       //подключение к серверу прошло успешно
     connect(&currentUser, &QTcpSocket::readyRead, &mainHandler, &NetworkEventMainHandler::SocketReadyRead); //появились данные в сокете
-    connect(&currentUser, &QTcpSocket::disconnected, this, &ApplicationContext::ServerDisconnected);               //соединение разорвано
+    connect(&currentUser, &QTcpSocket::disconnected, this, &ApplicationContext::ServerDisconnected);        //соединение разорвано
     currentUser.connectToHost("127.0.0.1", 8000);
 
-    //Заводим таймер на случай, если от сервера не будет ответа
+    //Заводим таймер на случай, если не удается подключиться к серверу
     waitingNetworkEventTimer = new QTimer();
     connect(waitingNetworkEventTimer, &QTimer::timeout, this, &ApplicationContext::ConnectToServerTimeout);
     waitingNetworkEventTimer->start(5000);
@@ -33,6 +35,9 @@ ApplicationContext::ApplicationContext()
     mainHandler.GetHandlers()["CHAT MESSAGES"] = new Server_Answer_CHAT_MESSAGES();
     mainHandler.GetHandlers()["SEND MESSAGE"] = new Server_Answer_SEND_MESSAGE();
     mainHandler.GetHandlers()["CHAT UPDATE MESSAGES"] = new Server_Answer_CHAT_UPDATE_MESSAGES();
+    mainHandler.GetHandlers()["REGISTER"] = new Server_Answer_REGISTER();
+    mainHandler.GetHandlers()["CHAT CREATE"] = new Server_Answer_CHAT_CREATE();
+    mainHandler.GetHandlers()["CHAT UPDATE LIST"] = new Server_Answer_CHAT_UPDATE_LIST();
     mainHandler.SetUnrecognizedEventHandler(new Server_Answer_Unrecognized_Command());
 }
 
@@ -47,8 +52,8 @@ ApplicationContext::~ApplicationContext()
         delete messengerMainWindow;
     if (registrationWindow)
         delete registrationWindow;
-    if (searchUserWindow)
-        delete searchUserWindow;
+    if (startPersonalChatWindow)
+        delete startPersonalChatWindow;
 
     if (waitingNetworkEventTimer)
     {
@@ -90,16 +95,8 @@ void ApplicationContext::ShowRegistrationForm()
 {
     if (!registrationWindow)
         registrationWindow = new RegistrationForm();
+    registrationWindow->ClearFields();
     registrationWindow->exec();
-}
-
-
-
-void ApplicationContext::ShowSearchUserForm()
-{
-    if (!searchUserWindow)
-        searchUserWindow = new SearchUserForm();
-    searchUserWindow->exec();
 }
 
 QMap<qint32, Chat *>& ApplicationContext::GetChats()
@@ -126,7 +123,7 @@ void ApplicationContext::ConnectToServerTimeout()
 
 void ApplicationContext::ConnectToServerSuccess()
 {
-    GeneralLog::GetLog()->Write("Connecting to server success");
+    GeneralLog::GetLog()->Write(QDateTime::currentDateTime().toString("dd.MM.yyyy HH:mm:ss") + ". Connecting to server success");
     ShowHelloForm();
     waitingNetworkEventTimer->stop();
     delete waitingNetworkEventTimer;
@@ -135,9 +132,9 @@ void ApplicationContext::ConnectToServerSuccess()
 
 void ApplicationContext::ServerDisconnected()
 {
-    GeneralLog::GetLog()->Write("Server disconnected");
+    GeneralLog::GetLog()->Write(QDateTime::currentDateTime().toString("dd.MM.yyyy HH:mm:ss") + ". Server disconnected");
     QMessageBox::critical(helloWindow, "СимплМСГ", "Соединение с сервером разорвано");
-    applicationMainEventLoop->exit(0);  //Закрываем приложение
+    applicationMainEventLoop->exit(0);      //Закрываем приложение
 }
 
 void ApplicationContext::ShowMessengerMainForm()
@@ -152,6 +149,20 @@ void ApplicationContext::ShowMessengerMainForm()
         identificationWindow->hide();
 }
 
+void ApplicationContext::ShowStartPersonalChatWindow()
+{
+    if (!startPersonalChatWindow)
+        startPersonalChatWindow = new StartPersonalChatForm();
+    startPersonalChatWindow->ClearFields();
+    startPersonalChatWindow->exec();
+}
+
+void ApplicationContext::HideCreatingChatWindows()
+{
+    if (startPersonalChatWindow)
+        startPersonalChatWindow->hide();
+}
+
 
 
 ///////////////////////////////////Запросы/////////////////////////////////////////
@@ -161,7 +172,7 @@ void ApplicationContext::ShowMessengerMainForm()
 
 void ApplicationContext::SendRequest_AUTHETICATE(QString login, QString password)
 {
-    GeneralLog::GetLog()->Write("Trying to authenticate user");
+    GeneralLog::GetLog()->Write(QDateTime::currentDateTime().toString("dd.MM.yyyy HH:mm:ss") + ". Trying to authenticate user");
     currentUser.GetConnectionStream() << QString("AUTHENTICATE") << RequestID::NextID() << login << password;
     currentUser.SendData();
 }
@@ -169,17 +180,18 @@ void ApplicationContext::SendRequest_AUTHETICATE(QString login, QString password
 
 void ApplicationContext::SendRequest_CHAT_LIST()
 {
-    GeneralLog::GetLog()->Write("Trying to get chat list");
+    GeneralLog::GetLog()->Write(QDateTime::currentDateTime().toString("dd.MM.yyyy HH:mm:ss") + ". Trying to get chat list");
     currentUser.GetConnectionStream() << QString("CHAT LIST") << RequestID::NextID();
     currentUser.SendData();
 }
 
 void ApplicationContext::SendRequest_CHAT_MESSAGES(Chat *selectedChat)
 {
+    GeneralLog::GetLog()->Write(QDateTime::currentDateTime().toString("dd.MM.yyyy HH:mm:ss") + ". Trying to download chat messages");
     this->selectedChat = selectedChat;
     if (!selectedChat->GetMessagesDownloadedFlag())
     {
-        GeneralLog::GetLog()->Write("Trying to download chat messages");
+        GeneralLog::GetLog()->Write("Send request to server");
         quint32 requestId = RequestID::NextID();
         Server_Answer_CHAT_MESSAGES* handler = (Server_Answer_CHAT_MESSAGES*)mainHandler.GetHandlers()["CHAT MESSAGES"];
         handler->AddRequest(requestId, selectedChat);
@@ -196,8 +208,31 @@ void ApplicationContext::SendRequest_CHAT_MESSAGES(Chat *selectedChat)
 
 void ApplicationContext::SendRequest_SEND_MESSAGE(Message *newMessage)
 {
-    GeneralLog::GetLog()->Write("Trying to send message");
+    GeneralLog::GetLog()->Write(QDateTime::currentDateTime().toString("dd.MM.yyyy HH:mm:ss") + ". Trying to send message");
     currentUser.GetConnectionStream() << QString("SEND MESSAGE") << RequestID::NextID() << newMessage->GetChat()->GetIdChat() << newMessage->GetMessageText();
+    currentUser.SendData();
+}
+
+void ApplicationContext::SendRequest_REGISTER(User *newUser, QString password)
+{
+    GeneralLog::GetLog()->Write(QDateTime::currentDateTime().toString("dd.MM.yyyy HH:mm:ss") + ". Trying to register user");
+    currentUser.GetConnectionStream() << QString("REGISTER") << RequestID::NextID()
+                                      << newUser->GetLogin()
+                                      << password
+                                      << newUser->GetSurname()
+                                      << newUser->GetUserName();
+    currentUser.SendData();
+}
+
+void ApplicationContext::SendRequest_CHAT_CREATE(QString login)
+{
+    GeneralLog::GetLog()->Write(QDateTime::currentDateTime().toString("dd.MM.yyyy HH:mm:ss") + ". Trying to create personal chat");
+    currentUser.GetConnectionStream() << QString("CHAT CREATE")
+                                      << RequestID::NextID()
+                                      << qint32(1)
+                                      << QString("PERSONAL CHAT DEFAULT NAME")
+                                      << quint32(1)
+                                      << login;
     currentUser.SendData();
 }
 
@@ -244,7 +279,7 @@ void ApplicationContext::Server_Answer_CHAT_LIST::Handle(quint32 requestId, User
 
     params >> chatCount;
     GeneralLog::GetLog()->Write("Received " + QString::number(chatCount) + " chat(s)");
-    for (int i = 0; i < chatCount; i++)
+    for (quint32 i = 0; i < chatCount; i++)
     {
         qint32 idChat;
         qint32 idChatType;
@@ -287,7 +322,7 @@ void ApplicationContext::Server_Answer_CHAT_MESSAGES::Handle(quint32 requestId, 
     params >> membersCount;
     GeneralLog::GetLog()->Write("Received " + QString::number(membersCount) + " members(s)");
 
-    for (int i = 0; i < membersCount; i++)
+    for (quint32 i = 0; i < membersCount; i++)
     {
         qint32 idUser;
         QString surname;
@@ -321,7 +356,7 @@ void ApplicationContext::Server_Answer_CHAT_MESSAGES::Handle(quint32 requestId, 
     quint32 messageCount;
     params >> messageCount;
     GeneralLog::GetLog()->Write("Received " + QString::number(messageCount) + " message(s)");
-    for (int i = 0; i < messageCount; i++)
+    for (quint32 i = 0; i < messageCount; i++)
     {
         qint32 idMessage;
         QString messageTime;
@@ -393,7 +428,7 @@ void ApplicationContext::Server_Answer_CHAT_UPDATE_MESSAGES::Handle(quint32 requ
     quint32 messageCount;
     params >> messageCount;
     GeneralLog::GetLog()->Write("Received " + QString::number(messageCount) + " message(s)");
-    for (int i = 0; i < messageCount; i++)
+    for (quint32 i = 0; i < messageCount; i++)
     {
         qint32 idChat;
         qint32 idMessage;
@@ -435,4 +470,107 @@ void ApplicationContext::Server_Answer_CHAT_UPDATE_MESSAGES::Handle(quint32 requ
         if (currentChat == ApplicationContext::GetContext()->selectedChat)
             ApplicationContext::GetContext()->messengerMainWindow->ViewMessage(currentMessage);
     }
+}
+
+void ApplicationContext::Server_Answer_REGISTER::Handle(quint32 requestId, UserConnection *user, QDataStream &params)
+{
+    user->ClearConnectionStream();
+
+    QString result;
+    params >> result;
+    if (result == "SUCCESS")
+    {
+        GeneralLog::GetLog()->Write("Registration is successfull");
+        QMessageBox::information(ApplicationContext::GetContext()->registrationWindow, "Новый пользователь", "Новый пользователь успешно зарегистрирован");
+        ApplicationContext::GetContext()->registrationWindow->hide();
+    }
+    if (result == "ERROR")
+    {
+        QString errorStr;
+        params >> errorStr;
+        GeneralLog::GetLog()->Write("Registration is failed. Server error: " + errorStr);
+        if (errorStr == "LOGIN EXISTS")
+            QMessageBox::information(ApplicationContext::GetContext()->registrationWindow, "Новый пользователь", "Указанный логин уже существует");
+        else if (errorStr == "ANOTHER")
+            QMessageBox::information(ApplicationContext::GetContext()->registrationWindow, "Новый пользователь", "Отказано в создании нового пользователя");
+        ApplicationContext::GetContext()->registrationWindow->EnableRegisterButton();
+    }
+}
+
+void ApplicationContext::Server_Answer_CHAT_CREATE::Handle(quint32 requestId, UserConnection *user, QDataStream &params)
+{
+    user->ClearConnectionStream();
+
+    QString status;
+    params >> status;
+    if (status == "ERROR")
+    {
+        GeneralLog::GetLog()->Write("The chat wasn't created");
+        QWidget* parentWindow = nullptr;
+        if (this->isPersonalChat)
+            parentWindow = ApplicationContext::GetContext()->startPersonalChatWindow;
+
+        QString reason;
+        params >> reason;
+        if (reason == "USER NOT EXIST")
+        {
+            QString login;
+            params >> login;
+
+            GeneralLog::GetLog()->Write("User '" + login + "' isn't detected");
+            QMessageBox::critical(parentWindow, "Ошибка", "Пользователь '" + login + "' не обнаружен");
+        }
+        else if (reason == "PERSONAL CHAT EXISTS")
+        {
+            GeneralLog::GetLog()->Write("Personal chat already exists");
+            QMessageBox::critical(parentWindow, "Ошибка", "Чат с этим пользователем уже существует");
+        }
+        else
+        {
+            GeneralLog::GetLog()->Write("Unknown reason");
+            QMessageBox::critical(parentWindow, "Ошибка", "Отказано в создании чата");
+        }
+    }
+    else
+    {
+        GeneralLog::GetLog()->Write("The chat was created");
+        ApplicationContext::GetContext()->HideCreatingChatWindows();
+    }
+
+}
+
+void ApplicationContext::Server_Answer_CHAT_CREATE::SetPersonalChatFlag(bool flag)
+{
+    isPersonalChat = flag;
+}
+
+void ApplicationContext::Server_Answer_CHAT_UPDATE_LIST::Handle(quint32 requestId, UserConnection *user, QDataStream &params)
+{
+    user->ClearConnectionStream();                          //Отправка ответного сообщения не требуется
+
+    ApplicationContext* context = ApplicationContext::GetContext();
+
+    qint32 idChat;
+    qint32 idChatType;
+    QString chatName;
+
+    params >> idChat >> idChatType>> chatName;
+
+    //Проверяем, существует ли уже такой чат. Если нет, то создаем
+    Chat* currentChat = context->chats[idChat];
+    if (currentChat == nullptr)
+    {
+        currentChat = new Chat();
+        context->chats[idChat] = currentChat;
+    }
+
+    currentChat->SetIdChat(idChat);
+    currentChat->SetIdChatType(idChatType);
+    currentChat->SetChatName(chatName);
+
+    GeneralLog::GetLog()->Write(QString::number(idChat));
+    GeneralLog::GetLog()->Write(QString::number(idChatType));
+    GeneralLog::GetLog()->Write(chatName);
+
+    context->messengerMainWindow->ViewChat(currentChat);
 }

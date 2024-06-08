@@ -54,9 +54,25 @@ void MessengerMainForm::ViewMessage(Message *currentMessage)
                              ": " + currentMessage->GetMessageText());
 }
 
+void MessengerMainForm::ViewChat(Chat *currentChat)
+{
+    ui->chatList->addItem(currentChat->GetChatName());
+    this->chatList.push_back(currentChat);
+}
+
+void MessengerMainForm::FocusOnChat(Chat *currentChat)
+{
+    for (int i = 0; i < this->chatList.size(); i++)
+        if (currentChat == this->chatList[i])
+        {
+            ui->chatList->setCurrentRow(i);
+            break;
+        }
+}
+
 void MessengerMainForm::on_action_triggered()
 {
-
+    ApplicationContext::GetContext()->ShowStartPersonalChatWindow();
 }
 
 
