@@ -24,6 +24,7 @@ void RegistrationForm::ClearFields()
     ui->surnameLine->setText("");
     ui->nameLine->setText("");
     ui->registerButton->setEnabled(true);
+    this->setCursor(Qt::ArrowCursor);
 }
 
 void RegistrationForm::EnableRegisterButton()

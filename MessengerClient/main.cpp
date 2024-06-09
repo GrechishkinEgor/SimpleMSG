@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 
     int resultCode = eventLoop.exec();
 
-    GeneralLog::GetLog()->Write("Stopping server");
+    GeneralLog::GetLog()->Write("Stopping the client");
     GeneralLog::GetLog()->Write("Stopping time: " + QDateTime::currentDateTime().toString("dd.MM.yyyy HH:mm:ss"));
     return resultCode;
 }

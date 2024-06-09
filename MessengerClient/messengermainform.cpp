@@ -84,6 +84,8 @@ void MessengerMainForm::on_chatList_clicked(const QModelIndex &index)
 
 void MessengerMainForm::on_sendButton_clicked()
 {
+    if (ui->newMessage->text().trimmed() == "")
+        return;
     Message newMessage;
     newMessage.SetChat(selectedChat);
     newMessage.SetMessageText(ui->newMessage->text());

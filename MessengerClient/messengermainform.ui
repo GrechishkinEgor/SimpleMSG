@@ -92,6 +92,9 @@
    <property name="text">
     <string>Создать групповой чат</string>
    </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
   </action>
  </widget>
  <resources/>

@@ -568,9 +568,5 @@ void ApplicationContext::Server_Answer_CHAT_UPDATE_LIST::Handle(quint32 requestI
     currentChat->SetIdChatType(idChatType);
     currentChat->SetChatName(chatName);
 
-    GeneralLog::GetLog()->Write(QString::number(idChat));
-    GeneralLog::GetLog()->Write(QString::number(idChatType));
-    GeneralLog::GetLog()->Write(chatName);
-
     context->messengerMainWindow->ViewChat(currentChat);
 }

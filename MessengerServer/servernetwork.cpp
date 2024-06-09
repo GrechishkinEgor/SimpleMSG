@@ -66,6 +66,35 @@ void ServerNetwork::close()
     QTcpServer::close();
 }
 
+void ServerNetwork::incomingConnection(qintptr socketDescriptor)
+{
+    UserConnection* currentUser = new UserConnection(socketDescriptor);
+    connect(currentUser, &QTcpSocket::readyRead, &mainHandler, &NetworkEventMainHandler::SocketReadyRead);
+    connect(currentUser, &QTcpSocket::disconnected, this, &ServerNetwork::ClosingConnection);
+    users.push_back(currentUser);
+    GeneralLog::GetLog()->Write(QDateTime::currentDateTime().toString("dd.MM.yyyy HH:mm:ss") +
+                                ". User connected. Socket descriptor: " + QString::number(socketDescriptor));
+}
+
+void ServerNetwork::ClosingConnection()
+{
+    UserConnection* closingConnection = (UserConnection*)sender();
+    GeneralLog::GetLog()->Write(QDateTime::currentDateTime().toString("dd.MM.yyyy HH:mm:ss") +
+                                ". User disconnected. Socket descriptor: " +
+                                QString::number(closingConnection->GetSavedSocketDescriptor()));
+    for (auto i = users.begin(); i != users.end(); i++)
+        if ((*i) == closingConnection)
+        {
+            (*i)->deleteLater();
+            users.erase(i);
+            break;
+        }
+}
+
+
+///////////////////////////////////Запросы/////////////////////////////////////////
+
+
 void ServerNetwork::SendRequest_CHAT_UPDATE_MESSAGES(QSqlQuery *messagesInfo)
 {
     QSqlQuery chatMembersQuery(MessengerDatabase::GetDB());  //Кому отправлять сообщение
@@ -103,37 +132,14 @@ void ServerNetwork::SendRequest_CHAT_UPDATE_LIST(qint32 idChat, qint32 idChatTyp
                                             << idChatType
                                             << chatName;
                 (*i)->SendData();
-                GeneralLog::GetLog()->Write(QString::number(idChat));
-                GeneralLog::GetLog()->Write(QString::number(idChatType));
-                GeneralLog::GetLog()->Write(chatName);
                 break;
             }
 }
 
-void ServerNetwork::incomingConnection(qintptr socketDescriptor)
-{
-    UserConnection* currentUser = new UserConnection(socketDescriptor);
-    connect(currentUser, &QTcpSocket::readyRead, &mainHandler, &NetworkEventMainHandler::SocketReadyRead);
-    connect(currentUser, &QTcpSocket::disconnected, this, &ServerNetwork::ClosingConnection);
-    users.push_back(currentUser);
-    GeneralLog::GetLog()->Write(QDateTime::currentDateTime().toString("dd.MM.yyyy HH:mm:ss") +
-                ". User connected. Socket descriptor: " + QString::number(socketDescriptor));
-}
 
-void ServerNetwork::ClosingConnection()
-{
-    UserConnection* closingConnection = (UserConnection*)sender();
-    GeneralLog::GetLog()->Write(QDateTime::currentDateTime().toString("dd.MM.yyyy HH:mm:ss") +
-                                ". User disconnected. Socket descriptor: " +
-                                QString::number(closingConnection->GetSavedSocketDescriptor()));
-    for (auto i = users.begin(); i != users.end(); i++)
-        if ((*i) == closingConnection)
-        {
-            (*i)->deleteLater();
-            users.erase(i);
-            break;
-        }
-}
+///////////////////////////////////Обработчики сетевых событий/////////////////////////////////////////
+
+
 
 void ServerNetwork::ServerCommand_AUTHENTICATE::Handle(quint32 requestId, UserConnection *user, QDataStream &params)
 {
@@ -364,6 +370,15 @@ void ServerNetwork::ServerCommand_CHAT_CREATE::Handle(quint32 requestId, UserCon
             idUsers.push_back(idUserQuery.value(0).toInt());
     }
 
+    //Проверяем, что личный чат не создается с самим собой
+    if (idChatType == 1 && logins[0] == user->GetUserInfo().GetLogin())
+    {
+        GeneralLog::GetLog()->Write("Attempt to create chat with yourself");
+        user->GetConnectionStream() << QString("ERROR") << QString("ANOTHER");
+        user->SendData();
+        return;
+    }
+
     //Проверяем для личного чата, что таковой до сих пор не существует
     if (idChatType == 1)
     {
@@ -387,7 +402,7 @@ void ServerNetwork::ServerCommand_CHAT_CREATE::Handle(quint32 requestId, UserCon
     }
 
     //Меняем имя для личного чата
-    if (idChatType)
+    if (idChatType == 1)
         chatName = user->GetUserInfo().GetLogin() + "/" + logins[0];
 
     QSqlQuery createChatQuery(MessengerDatabase::GetDB());
